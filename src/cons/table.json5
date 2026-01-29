@@ -1,0 +1,98 @@
+{ // 注 -> 这里均为createTime
+  "stockBasic":{ // 股票基础信息
+    "dbName": "dfs://stockDay",
+    "tbName": "stockBasic",
+    "isTSDB": false,
+    "indicator": {
+      "ts_code": "SYMBOL",
+      "symbol": "SYMBOL",
+      "name": "STRING",
+      "area": "STRING",
+      "industry": "STRING",
+      "enName": "STRING",
+      "cnSpell": "STRING",
+      "market": "SYMBOL",
+      "exchange": "SYMBOL",
+      "currType": "STRING",
+      "listStatus": "STRING",
+      "listDate": "DATE",
+      "delistDate": "DATE",
+      "isHs": "SYMBOL"
+    },
+    "addCreateTime": true,
+    "partitionCol": ["createTime"],
+    "sortCol": [],
+    "keepDuplicates": "ALL"
+  },
+
+  "stockDisclosure": {// 财报披露时间
+    "dbName": "dfs://stockDay",
+    "tbName": "stockDisclosure",
+    "isTSDB": false,
+    "indicator": {
+      "ts_code": "SYMBOL",
+      "annDate": "DATE",
+      "endDate": "DATE",
+      "preDate": "DATE",
+      "actualDate": "DATE",
+      "modifyDate": "DATE"
+    },
+    "addCreateTime": true,
+    "partitionCol": ["endDate"],
+    "sortCol": [],
+    "keepDuplicates": "ALL"
+  },
+
+  "stockDailyBasic": { // 每日财务指标
+    "dbName": "dfs://stockDay",
+    "tbName": "stockDailyBasic",
+    "isTSDB": false,
+    "indicator": {
+      "ts_code": "SYMBOL",
+      "tradeDate": "DATE",
+      "close": "DOUBLE",
+      "turnoverRate": "DOUBLE",
+      "turnoverRateF": "DOUBLE",
+      "volumeRatio": "DOUBLE",
+      "PE": "DOUBLE",
+      "PE_TTM": "DOUBLE",
+      "PB": "DOUBLE",
+      "PS": "DOUBLE",
+      "PS_TTM": "DOUBLE",
+      "DV": "DOUBLE",
+      "DV_TTM": "DOUBLE",
+      "totalShare": "DOUBLE",
+      "floatShare": "DOUBLE",
+      "freeShare": "DOUBLE",
+      "totalMV": "DOUBLE",
+      "circMV": "DOUBLE"
+    },
+    "addCreateTime": true,
+    "partitionCol": ["tradeDate"],
+    "sortCol": [],
+    "keepDuplicates": "ALL"
+  },
+
+  "stockDailyBar": {
+    "dbName": "dfs://stockDay",
+    "tbName": "stockDailyBar",
+    "isTSDB": false,
+    "indicator": {
+      "ts_code": "SYMBOL",
+      "tradeDate": "DATE",
+      "open": "DOUBLE",
+      "high": "DOUBLE",
+      "low": "DOUBLE",
+      "close": "DOUBLE",
+      "preClose": "DOUBLE",
+      "change": "DOUBLE",
+      "pctChg": "DOUBLE",
+      "volume": "LONG",
+      "amount": "DOUBLE"
+    },
+    "addCreateTime": true,
+    "partitionCol": ["tradeDate"],
+    "sortCol": [],
+    "keepDuplicates": "ALL"
+  }
+}
