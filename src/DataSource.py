@@ -56,4 +56,5 @@ def get_stock_basic(pro: DataApi) -> pd.DataFrame:
     data = pro.stock_basic(exchange='')
     data["list_date"] = data["list_date"].apply(pd.Timestamp)
     data["delist_date"] = data["delist_date"].apply(pd.Timestamp)
+    data["createTime"] = pd.Timestamp.now()
     return data

@@ -1,0 +1,6 @@
+{
+  "stockBasic": {
+    "dbName": "dfs://stockDay",
+    "tbName": "stockBasic"
+  }
+}
