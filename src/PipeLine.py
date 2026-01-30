@@ -1,4 +1,4 @@
-import json, json5
+import time, json, json5
 import inspect
 import pandas as pd
 import tushare as ts
@@ -24,34 +24,78 @@ class PipeLine(Operator, Time):
         self.password = password
         self.startDate = startDate
         self.session = ddb.session(host, port, userid, password)
-    
+
+    def getState(self, dbName, tbName) -> int:
+        return self.session.run(f"""
+        count = exec count(*) from objByName(`sys, true) where dbName="{dbName}" and tbName="{tbName}"
+        if (count == 0){{
+            state = 0
+        }}else{{
+            state = exec state from objByName(`sys, true) where dbName="{dbName}" and tbName="{tbName}"
+        }}
+        state;
+        """)
+
+    def getLastDate(self, dbName, tbName) -> pd.Timestamp:
+        resDict = self.session.run(f"""
+        count = exec count(*) from objByName(`sys, true) where dbName="{dbName}" and tbName="{tbName}"
+        if (count == 0){{
+            lastDate_ = NULL
+        }}else{{
+            lastDate_ = exec lastDate from objByName(`sys, true) where dbName="{dbName}" and tbName="{tbName}"
+        }}
+        resDict = dict(STRING, DATE);
+        resDict["lastDate"] = lastDate_;
+        resDict;
+        """)
+        lastDate = resDict["lastDate"]
+        if lastDate is None:
+            return pd.Timestamp(self.startDate)
+        else:
+            return pd.Timestamp(lastDate)
+
     def stockBasic(self) -> None:
+        """
+        股票基本信息表(静态信息表) -> 删除 -> 重建
+        """
         funcName = inspect.currentframe().f_code.co_name    # 获取当前函数名称
         dbName = self.pipelineDict[funcName]["dbName"]
         tbName = self.pipelineDict[funcName]["tbName"]
         dateCol = self.tableDict[funcName]["dateCol"]
         session = ddb.session(self.host, self.port, self.userid, self.password)
         self.deleteFromDDB(session, dbName, tbName)
+        t0 = time.time()
         data = get_stock_basic(self.pro)
+        t1 = time.time()
         if data.empty:
-            print("stockBasic 获取失败!")
+            print("stockBasic 获取为空!")
             return
         self.insertToDDB(session, dbName=dbName, tbName=tbName, data=data,
-                         isInfo=True, dateCol=dateCol)
+                         isInfo=True, dateCol=dateCol, timeCost=t1-t0)
 
     def stockDisclosure(self) -> None:
+        """
+        股票财务报告披露时间表 ->
+        """
         funcName = inspect.currentframe().f_code.co_name    # 获取当前函数名称
         dbName = self.pipelineDict[funcName]["dbName"]
         tbName = self.pipelineDict[funcName]["tbName"]
         dateCol = self.tableDict[funcName]["dateCol"]
         session = ddb.session(self.host, self.port, self.userid, self.password)
-        totalDateList = self.get_totalDate(self.startDate, self.currentDate, freq="Q")
+        state = self.getState(dbName, tbName)
+        if state == 0:
+            totalDateList = self.get_totalDate(self.startDate, self.currentDate, freq="Q")
+        else:
+            nextDate = self.getLastDate(dbName, tbName) + pd.Timedelta(1,"D")
+            totalDateList = self.get_totalDate(nextDate, self.currentDate, freq="Q")
+        t0 = time.time()
         data = get_disclosure(self.pro, totalDateList)
+        t1 = time.time()
         if data.empty:
-            print("stockDisclosure 获取失败!")
+            print("stockDisclosure 获取为空!")
             return
         self.insertToDDB(session, dbName=dbName, tbName=tbName, data=data,
-                         isInfo=False, dateCol=dateCol)
+                         isInfo=False, dateCol=dateCol, timeCost=t1-t0)
 
     def run(self):
         """

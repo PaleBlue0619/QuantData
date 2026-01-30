@@ -17,6 +17,8 @@ class Time:
         """
         获取不同频率的时间列表
         """
+        if pd.Timestamp(startDate) > pd.Timestamp(endDate):
+            return []
         if freq == "D":
             return self.session.run(f"""
             startDate = {pd.Timestamp(startDate).strftime("%Y.%m.%d")}
@@ -37,6 +39,8 @@ class Time:
             """)["totalDay"].tolist()
 
     def get_tradeDate(self, startDate, endDate: pd.Timestamp) -> List[pd.Timestamp]:
+        if pd.Timestamp(startDate) > pd.Timestamp(endDate):
+            return []
         return self.session.run(f"""
         startDate = {pd.Timestamp(startDate).strftime("%Y.%m.%d")}
         endDate = {pd.Timestamp(endDate).strftime("%Y.%m.%d")}

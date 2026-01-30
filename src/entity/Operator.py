@@ -33,8 +33,10 @@ class Operator:
         count = exec count(*) from tab where dbName = dbName_ and tbName = tbName_
         if (count == 0){{
             createTime_ = updateTime_; // 说明此时sys中还没有这条记录 -> updateTime = createTime
+            timeCost_ = 0.0;
         }}else{{
             createTime_ = exec createTime from tab where dbName = dbName_ and tbName = tbName_
+            timeCost_ = exec timeCost from tab where dbName = dbName_ and tbName = tbName_
         }}
          
         // 更新的属性 -> firstDate lastDate
@@ -47,7 +49,7 @@ class Operator:
             lastDate_ = NULL;
         }}
         insert into tab values(
-            dbName_, tbName_, createTime_, updateTime_, firstDate_, lastDate_, state_);
+            dbName_, tbName_, createTime_, updateTime_, firstDate_, lastDate_, state_, timeCost_);
         """)
 
 
@@ -69,8 +71,9 @@ class Operator:
         firstDate_ = NULL
         lastDate_ = NULL
         state_ = 0
+        timeCost_ = 0.0
         insert into tab values(
-            dbName_, tbName_, createTime_, updateTime_, firstDate_, lastDate_, state_);
+            dbName_, tbName_, createTime_, updateTime_, firstDate_, lastDate_, state_, timeCost_);
         """)
 
     @staticmethod
@@ -96,6 +99,7 @@ class Operator:
 
     @staticmethod
     def insertToDDB(session: ddb.session, dbName: str, tbName: str, data: pd.DataFrame,
+                    timeCost: float = 0.0,
                     isInfo: bool = False, dateCol: str = None):
         """
         DDB tableInsert 同步写入

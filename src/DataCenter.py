@@ -19,13 +19,13 @@ class DataCenter:
     def init(self):
         """
         创建全局状态共享键值表 -> ("sys")
-        dbName tbName createTime updateTime firstDate lastDate nextDate state
-        数据库名(排序列1) 数据表名(排序列2) 创建时间 更新时间 表内最小日期 表内最大日期
+        dbName tbName createTime updateTime firstDate lastDate nextDate state timeCost
+        数据库名(排序列1) 数据表名(排序列2) 创建时间 更新时间 表内最小日期 表内最大日期 上次耗时(s)
         """
         tbName = "sys"
         indexCols = ["dbName","tbName"]
-        colNames = ["dbName","tbName","createTime","updateTime","firstDate","lastDate","state"]
-        colTypes = ["STRING","STRING","TIMESTAMP","TIMESTAMP","DATE","DATE","INT"]
+        colNames = ["dbName","tbName","createTime","updateTime","firstDate","lastDate","state","timeCost"]
+        colTypes = ["STRING","STRING","TIMESTAMP","TIMESTAMP","DATE","DATE","INT","DOUBLE"]
         # 判断是否存在该表 -> 不存在则创建
         self.session.run(f"""
         if (defined(`sys,SHARED) == 0){{
