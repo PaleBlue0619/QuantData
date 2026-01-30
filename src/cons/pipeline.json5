@@ -2,5 +2,9 @@
   "stockBasic": {
     "dbName": "dfs://stockDay",
     "tbName": "stockBasic"
+  },
+  "stockDisclosure": {
+    "dbName": "dfs://stockDay",
+    "tbName": "stockDisclosure"
   }
 }

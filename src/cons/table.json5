@@ -3,21 +3,20 @@
     "dbName": "dfs://stockDay",
     "tbName": "stockBasic",
     "isTSDB": false,
+    "isInfo": true, // 是否是静态信息的维度表 -> false则跳过日志的记录,每次均重新删除后再进行拉取
+    "dateCol": null,
     "indicator": {
       "ts_code": "SYMBOL",
       "symbol": "SYMBOL",
       "name": "STRING",
       "area": "STRING",
       "industry": "STRING",
-      "enName": "STRING",
-      "cnSpell": "STRING",
       "market": "SYMBOL",
       "exchange": "SYMBOL",
       "currType": "STRING",
       "listStatus": "STRING",
       "listDate": "DATE",
-      "delistDate": "DATE",
-      "isHs": "SYMBOL"
+      "delistDate": "DATE"
     },
     "addCreateTime": true,
     "partitionCol": ["createTime"],
@@ -25,17 +24,19 @@
     "keepDuplicates": "ALL"
   },
 
-  "stockDisclosure": {// 财报披露时间
+  "stockDisclosure": { // 财报披露时间
     "dbName": "dfs://stockDay",
     "tbName": "stockDisclosure",
     "isTSDB": false,
+    "isInfo": false, // 是否是静态信息的维度表
+    "dateCol": "endDate",
     "indicator": {
       "ts_code": "SYMBOL",
       "annDate": "DATE",
       "endDate": "DATE",
       "preDate": "DATE",
       "actualDate": "DATE",
-      "modifyDate": "DATE"
+      "modifyDate": "STRING"
     },
     "addCreateTime": true,
     "partitionCol": ["endDate"],
@@ -47,6 +48,8 @@
     "dbName": "dfs://stockDay",
     "tbName": "stockDailyBasic",
     "isTSDB": false,
+    "isInfo": false, // 是否是静态信息的维度表
+    "dateCol": "tradeDate",
     "indicator": {
       "ts_code": "SYMBOL",
       "tradeDate": "DATE",
@@ -77,6 +80,8 @@
     "dbName": "dfs://stockDay",
     "tbName": "stockDailyBar",
     "isTSDB": false,
+    "isInfo": false, // 是否是静态信息的维度表
+    "dateCol": "tradeDate",
     "indicator": {
       "ts_code": "SYMBOL",
       "tradeDate": "DATE",

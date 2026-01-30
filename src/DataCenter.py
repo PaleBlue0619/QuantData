@@ -16,6 +16,25 @@ class DataCenter:
             tableObj.fromDict(tableDict=tableDict)
             self.tableDict[tableName] = tableObj
 
+    def init(self):
+        """
+        创建全局状态共享键值表 -> ("sys")
+        dbName tbName createTime updateTime firstDate lastDate nextDate state
+        数据库名(排序列1) 数据表名(排序列2) 创建时间 更新时间 表内最小日期 表内最大日期
+        """
+        tbName = "sys"
+        indexCols = ["dbName","tbName"]
+        colNames = ["dbName","tbName","createTime","updateTime","firstDate","lastDate","state"]
+        colTypes = ["STRING","STRING","TIMESTAMP","TIMESTAMP","DATE","DATE","INT"]
+        # 判断是否存在该表 -> 不存在则创建
+        self.session.run(f"""
+        if (defined(`sys,SHARED) == 0){{
+            // 说明当前全局共享状态键值表不存在 -> 进行创建   
+            tab = keyedTable({indexCols},1:0,{colNames},{colTypes})
+            share(tab,"{tbName}")
+        }}
+        """)
+
     def createTB(self, unEqualDelete: bool):
         """
         创建数据库+数据表
@@ -66,10 +85,10 @@ class DataCenter:
                 db.createPartitionedTable(schemaTb, tableName="{tbName}", partitionColumns={partitionCol})
                 """)
 
-
 if __name__ == "__main__":
     with open(r"D:\DolphinDB\Project\QuantData\src\cons\table.json5","r",encoding='utf-8') as f:
         tableDict = json5.load(f)
     DCObj = DataCenter(session=ddb.session("localhost",8848,"admin","123456"))
     DCObj.fromDict(Dict=tableDict)
+    DCObj.init()
     DCObj.createTB(unEqualDelete=True)

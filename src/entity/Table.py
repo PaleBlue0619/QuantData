@@ -3,13 +3,18 @@ import dolphindb as ddb
 from typing import Dict,List
 
 class Table:
-    def __init__(self, isTSDB: bool = None, dbName: str = None, tbName: str = None, indicator: Dict = None, addCreateTime: bool = None,
-                 partitionCol: List[str] = None, sortCol: List[str] = None, keepDuplicates: bool = None):
+    def __init__(self, isTSDB: bool = None, isInfo: bool = None, dbName: str = None, tbName: str = None,
+                 indicator: Dict = None, addCreateTime: bool = None,
+                 dateCol: str = None,
+                 partitionCol: List[str] = None,
+                 sortCol: List[str] = None, keepDuplicates: bool = None):
         self.dbName = dbName
         self.tbName = tbName
         self.indicator = indicator
         self.addCreateTime = addCreateTime
         self.partitionCol = partitionCol
+        self.isInfo = isInfo
+        self.dateCol = dateCol
         # TSDB特有属性
         self.sortCol = sortCol
         self.keepDuplicates = keepDuplicates
@@ -22,6 +27,8 @@ class Table:
         self.indicator = tableDict["indicator"]
         self.addCreateTime = tableDict["addCreateTime"]
         self.partitionCol = tableDict["partitionCol"]
+        self.isInfo = tableDict["isInfo"]
+        self.dateCol = tableDict["dateCol"]
         if self.isTSDB:
             self.sortCol = tableDict["sortCol"]
             self.keepDuplicates = tableDict["keepDuplicates"]

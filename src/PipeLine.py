@@ -4,60 +4,72 @@ import pandas as pd
 import tushare as ts
 import dolphindb as ddb
 from tushare.pro.client import DataApi
-from dagster import asset, AssetGroup, Definitions, ResourceDefinition, ScheduleDefinition, define_asset_job
-from src.DataSource import *
+from src.time.Time import Time
+from src.entity.Source import *
+from src.entity.Operator import Operator
 from typing import Dict, List
 
-class PipeLine:
-    def __init__(self, token: str, host: str, post: int,
-                 userid: str, password: str,
-                 startDate: pd.Timestamp,
-                 endDate: pd.Timestamp,
-                 pipelineDict: Dict[str, Dict[str, str]]):
-        self.token = token
-        self.host = host
-        self.post = post
-        self.userid = userid
-        self.password = password
+class PipeLine(Operator, Time):
+    def __init__(self, token: str, host: str, port: int, userid: str, password: str,
+                 startDate: pd.Timestamp, pipelineDict: Dict[str, Dict[str, str]], tableDict: Dict[str, Dict]):
+        super().__init__()
         self.pro = ts.pro_api(token=token, timeout=30)
         self.pipelineDict = pipelineDict
+        self.tableDict = tableDict
+        self.startDate = pd.Timestamp(startDate)
+        self.currentDate = pd.Timestamp.now().date()
+        self.host = host
+        self.port = port
+        self.userid = userid
+        self.password = password
         self.startDate = startDate
-        self.endDate = endDate
-
-    @asset(deps=[get_stock_basic], description="获取股票基本信息->DDB", group_name="pipeline")
-    def stockBasic(self, data: pd.DataFrame) -> None:
+        self.session = ddb.session(host, port, userid, password)
+    
+    def stockBasic(self) -> None:
         funcName = inspect.currentframe().f_code.co_name    # 获取当前函数名称
         dbName = self.pipelineDict[funcName]["dbName"]
         tbName = self.pipelineDict[funcName]["tbName"]
+        dateCol = self.tableDict[funcName]["dateCol"]
         session = ddb.session(self.host, self.port, self.userid, self.password)
-        insertToDDB(session, dbName, tbName, data)
-
-    @job
-    def stockDataJob(self):
-        """
-        股票模块的任务链: 后续可添加
-        """
+        self.deleteFromDDB(session, dbName, tbName)
         data = get_stock_basic(self.pro)
-        self.stockBasic(data)
+        if data.empty:
+            print("stockBasic 获取失败!")
+            return
+        self.insertToDDB(session, dbName=dbName, tbName=tbName, data=data,
+                         isInfo=True, dateCol=dateCol)
+
+    def stockDisclosure(self) -> None:
+        funcName = inspect.currentframe().f_code.co_name    # 获取当前函数名称
+        dbName = self.pipelineDict[funcName]["dbName"]
+        tbName = self.pipelineDict[funcName]["tbName"]
+        dateCol = self.tableDict[funcName]["dateCol"]
+        session = ddb.session(self.host, self.port, self.userid, self.password)
+        totalDateList = self.get_totalDate(self.startDate, self.currentDate, freq="Q")
+        data = get_disclosure(self.pro, totalDateList)
+        if data.empty:
+            print("stockDisclosure 获取失败!")
+            return
+        self.insertToDDB(session, dbName=dbName, tbName=tbName, data=data,
+                         isInfo=False, dateCol=dateCol)
 
     def run(self):
-        """执行DAG任务调度"""
-        # 定义Dagster资源
-        defs = Definitions(
-            jobs=[self.stockDataJob],
-            resources={
-
-            }
-        )
-
-
-        return
+        """
+        运行该函数,期望得到以下效果:
+        1. 没有日的相关数据就补起来
+        2.
+        """
+        self.stockBasic()
+        self.stockDisclosure()
 
 if __name__ == "__main__":
-    with open("D:\DolphinDB\Project\QuantData\src\cons\pipeline.json5","r",encoding="utf-8") as f:
+    with open(r"D:\DolphinDB\Project\QuantData\src\cons\pipeline.json5","r",encoding="utf-8") as f:
         pipelineDict = json5.load(f)
-    pipe = PipeLine(token="3879419d53b98d0972af48d506fb42b1aeb8b6699c8c926dfffbe5db",
-                    host="localhost",post=8848,userid="admin",password="123456",
-                    startDate=pd.Timestamp("20100101"), endDate=None,
-                    pipelineDict=pipelineDict)
-
+    with open(r"D:\DolphinDB\Project\QuantData\src\cons\table.json5","r",encoding="utf-8") as f:
+        tableDict = json5.load(f)
+    pipe = PipeLine(token="ffc4899988221cf550031a4c1c8494f00ab589403ac1c24ac692871b",
+                    host="localhost", port=8848, userid="admin", password="123456",
+                    startDate=pd.Timestamp("20100101"),
+                    pipelineDict=pipelineDict,
+                    tableDict=tableDict)
+    pipe.run()
