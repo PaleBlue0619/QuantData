@@ -32,7 +32,8 @@ class PipeLine(Mode):
         tbName = self.pipelineDict[funcName]["tbName"]
         dateCol = self.tableDict[funcName]["dateCol"]
         self.deleteAll_getAll_insertAll(dataFunc=get_stock_info, params={"pro": self.pro},
-                                    dbName=dbName, tbName=tbName, isInfo=True, dateCol=dateCol)
+                                        dbName=dbName, tbName=tbName, isInfo=True, dateCol=dateCol,
+                                        logStr=funcName)
 
     def stockDisclosure(self) -> None:
         """
@@ -42,21 +43,9 @@ class PipeLine(Mode):
         dbName = self.pipelineDict[funcName]["dbName"]
         tbName = self.pipelineDict[funcName]["tbName"]
         dateCol = self.tableDict[funcName]["dateCol"]
-        session = ddb.session(self.host, self.port, self.userid, self.password)
-        state = self.getState(dbName, tbName)
-        if state == 0:
-            totalDateList = self.get_totalDate(self.startDate, self.currentDate, freq="Q")
-        else:
-            nextDate = self.getLastDate(dbName, tbName) + pd.Timedelta(1,"D")
-            totalDateList = self.get_totalDate(nextDate, self.currentDate, freq="Q")
-        t0 = time.time()
-        data = get_stock_disclosure(self.pro, totalDateList)
-        t1 = time.time()
-        if data.empty:
-            print("stockDisclosure 获取为空!")
-            return
-        self.insertToDDB(session, dbName=dbName, tbName=tbName, data=data,
-                         isInfo=False, dateCol=dateCol, timeCost=t1-t0)
+        self.check_getAll_insertAll(dataFunc=get_stock_disclosure, params={"pro": self.pro},
+                                    dbName=dbName, tbName=tbName, isInfo=True, dateCol=dateCol,
+                                    logStr=funcName)
 
     def stockDailyBar(self) -> None:
         """
@@ -66,28 +55,14 @@ class PipeLine(Mode):
         dbName = self.pipelineDict[funcName]["dbName"]
         tbName = self.pipelineDict[funcName]["tbName"]
         dateCol = self.tableDict[funcName]["dateCol"]
-        session = ddb.session(self.host, self.port, self.userid, self.password)
-        state = self.getState(dbName, tbName)
-        if state == 0:  # 说明是第一次运行 -> 大批量拉取
-            startDate = self.startDate
-            endDate = self.currentDate
-        else:   # 说明不是第一次运行 -> 小批量拉取
-            startDate = self.getLastDate(dbName, tbName) + pd.Timedelta(1, "D")  # 开始日期
-            endDate = self.currentDate
-        totalDateList = self.get_totalDate(startDate, endDate, freq="D")
-        for date in tqdm.tqdm(totalDateList, desc="fetching stockDayBar..."):
-            t0 = time.time()
-            data = get_stock_dailyBar(self.pro, dateList=[date])
-            t1 = time.time()
-            if data.empty:
-                continue
-            self.insertToDDB(session, dbName=dbName, tbName=tbName, data=data,
-                             isInfo=False, dateCol=dateCol, timeCost=t1-t0)
+        self.check_getByDate_insertByDate(dataFunc=get_stock_dailyBar, params={"pro": self.pro},
+                                          dbName=dbName, tbName=tbName, isInfo=True, dateCol=dateCol,
+                                          logStr=funcName)
 
     def run(self):
         self.stockInfo()
-        # self.stockDisclosure()
-        # self.stockDailyBar()
+        self.stockDisclosure()
+        self.stockDailyBar()
 
 if __name__ == "__main__":
     with open(r"D:\DolphinDB\Project\QuantData\src\cons\pipeline.json5","r",encoding="utf-8") as f:
