@@ -1,10 +1,14 @@
 {
-  "stockBasic": {
+  "stockInfo": {
     "dbName": "dfs://stockDay",
-    "tbName": "stockBasic"
+    "tbName": "stockInfo"
   },
   "stockDisclosure": {
     "dbName": "dfs://stockDay",
     "tbName": "stockDisclosure"
+  },
+  "stockDailyBar": {
+    "dbName": "dfs://stockDay",
+    "tbName": "stockDailyBar"
   }
 }

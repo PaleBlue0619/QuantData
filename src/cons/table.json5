@@ -1,7 +1,7 @@
 { // 注 -> 这里均为createTime
-  "stockBasic":{ // 股票基础信息
+  "stockInfo":{ // 股票基础信息
     "dbName": "dfs://stockDay",
-    "tbName": "stockBasic",
+    "tbName": "stockInfo",
     "isTSDB": false,
     "isInfo": true, // 是否是静态信息的维度表 -> false则跳过日志的记录,每次均重新删除后再进行拉取
     "dateCol": null,
@@ -72,8 +72,8 @@
     },
     "addCreateTime": true,
     "partitionCol": ["tradeDate"],
-    "sortCol": [],
-    "keepDuplicates": "ALL"
+    "sortCol": ["ts_code","tradeDate"], // 这里不会触发 -> 当且仅当isTSDB=false + isInfo = false的时候用作巡检字段 -> 自动删除重复值
+    "keepDuplicates": "LAST"
   },
 
   "stockDailyBar": {
@@ -93,7 +93,8 @@
       "change": "DOUBLE",
       "pctChg": "DOUBLE",
       "volume": "LONG",
-      "amount": "DOUBLE"
+      "amount": "DOUBLE",
+      "adjFactor": "DOUBLE"
     },
     "addCreateTime": true,
     "partitionCol": ["tradeDate"],

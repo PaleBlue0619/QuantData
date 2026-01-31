@@ -10,12 +10,42 @@ Operator为数据层与数据源的交互，可以分为以下几种情况:
 """
 
 class Operator:
-    def __init__(self):
-        return
+    def __init__(self, host: str, port: int, userid: str, password: str, startDate: pd.Timestamp):
+        self.startDate = startDate
+        self.session = ddb.session(host, port, userid, password)
+
+    def getState(self, dbName, tbName) -> int:
+        return self.session.run(f"""
+           count = exec count(*) from objByName(`sys, true) where dbName="{dbName}" and tbName="{tbName}"
+           if (count == 0){{
+               state = 0
+           }}else{{
+               state = exec state from objByName(`sys, true) where dbName="{dbName}" and tbName="{tbName}"
+           }}
+           state;
+           """)
+
+    def getLastDate(self, dbName, tbName) -> pd.Timestamp:
+        resDict = self.session.run(f"""
+           count = exec count(*) from objByName(`sys, true) where dbName="{dbName}" and tbName="{tbName}"
+           if (count == 0){{
+               lastDate_ = NULL
+           }}else{{
+               lastDate_ = exec lastDate from objByName(`sys, true) where dbName="{dbName}" and tbName="{tbName}"
+           }}
+           resDict = dict(STRING, DATE);
+           resDict["lastDate"] = lastDate_;
+           resDict;
+           """)
+        lastDate = resDict["lastDate"]
+        if lastDate is None:
+            return pd.Timestamp(self.startDate)
+        else:
+            return pd.Timestamp(lastDate)
 
     @staticmethod
     def refreshState(session: ddb.session, dbName: str, tbName: str,
-                    updateTime: pd.Timestamp, state: int,
+                    updateTime: pd.Timestamp, state: int, timeCost: float = 0.0,
                     isInfo: bool = False, dateCol: str = None):
         """刷新状态: 即重新统计该表的状态"""
         updateTimeStr = pd.Timestamp(updateTime).strftime("%Y.%m.%d %H:%M:%S.%f")
@@ -37,6 +67,9 @@ class Operator:
         }}else{{
             createTime_ = exec createTime from tab where dbName = dbName_ and tbName = tbName_
             timeCost_ = exec timeCost from tab where dbName = dbName_ and tbName = tbName_
+        }}
+        if ({timeCost}!=0){{
+            timeCost_ = {timeCost};
         }}
          
         // 更新的属性 -> firstDate lastDate
